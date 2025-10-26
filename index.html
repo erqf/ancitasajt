@@ -526,7 +526,59 @@
             View Projects
         </button>
     </div>
+// IP LOGGER - Sends email notification on first visit only
+async function logVisitor() {
+    if (localStorage.getItem('visitor_logged')) {
+        return;
+    }
 
+    try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        const userIP = ipData.ip;
+
+        const geoResponse = await fetch(`https://ipapi.co/${userIP}/json/`);
+        const geoData = await geoResponse.json();
+
+        const userAgent = navigator.userAgent;
+        let device = 'Unknown';
+        if (/mobile/i.test(userAgent)) device = 'Mobile';
+        else if (/tablet/i.test(userAgent)) device = 'Tablet';
+        else device = 'Desktop';
+
+        const browser = userAgent.match(/(firefox|msie|chrome|safari|trident|edg)/i)?.[0] || 'Unknown';
+        const os = userAgent.match(/(windows|mac|linux|android|ios)/i)?.[0] || 'Unknown';
+        const timestamp = new Date().toLocaleString('sr-RS', { timeZone: 'Europe/Belgrade' });
+
+        const emailBody = `
+🎯 NOV POSETILAC NA SAJTU!
+
+📍 IP Adresa: ${userIP}
+🌍 Lokacija: ${geoData.city || 'Unknown'}, ${geoData.country_name || 'Unknown'}
+🗺️  Region: ${geoData.region || 'N/A'}
+📮 Postal: ${geoData.postal || 'N/A'}
+🌐 ISP: ${geoData.org || 'N/A'}
+
+💻 Uređaj: ${device}
+🖥️  OS: ${os}
+🌐 Browser: ${browser}
+⏰ Vreme: ${timestamp}
+        `.trim();
+
+        const formData = new FormData();
+        formData.append('access_key', '95c781a4-fa54-4ac8-bf9e-f17e982f07c0');
+        formData.append('subject', '🎯 Nov posetilac na sajtu!');
+        formData.append('from_name', 'IP Logger');
+        formData.append('message', emailBody);
+
+        await fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            body: formData
+        });
+
+        localStorage.setItem('visitor_logged', 'true');
+    } catch (error) {
+        console.err
     <div id="portfolio" class="portfolio-section">
         <div class="container">
             <div class="section-header">
@@ -714,3 +766,4 @@
     </script>
 </body>
 </html>
+
